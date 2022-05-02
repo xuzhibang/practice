@@ -1,0 +1,158 @@
+
+
+
+	PROJECT( hello)  指定了工程的名字，并且支持 所有的语言 建议这样写
+	PROJECT( hello CXX) 指定了工程的名字，并且支持语言是  c++
+	PROJECT( hello C CXX) 指定了工程的名字，并且支持语言是  C 和 C++
+	该指定 隐式的指定了 两个 Cmake 的变量
+	<projectname>_BINARY_DIR , 比如 : HELLO_BINARY_DIR 
+	<projectname>_SOURCE_DIR , 比如 : HELLO_SOURCE_DIR 
+
+	message 关键字 就可以直接使用 这俩个关键字, 当前都指向 当前的工作目录
+
+	MESSAGE( STATUS " this is BINARY dir" ${HELLO_BINARY_DIR})
+
+	MESSAGE( STATUS "this is source dir" ${HELLO_SOURCE_DIR})
+	如果工程名字改变了，这两个的值  也会 发生改变...
+
+
+	SET 关键字：
+	 用来显示的指定变量的...
+	 SET(SRC_LIST main.cpp)  SRC_LIST: 变量就包含了  main.cpp 
+	 也可以  SET( SRC_LIST main.cpp  t1.cpp  ) ; 多个的话，就空格隔开..
+	 
+	 
+	 MESSAGE 
+	   向终端输出用户自定义的信息
+	   主要包含 三种信息:
+	      SEND_ERROR: 产生错误，生成过程被跳过
+		  STAUS:   输出前缀为一的信息
+		  FATAL_ERROR:  立即终止 所有  cmake 的过程..
+		  
+    ADD_EXECUTABLE
+	   生成 可执行文件
+	   
+	ADD_EXECUTABLE( hello ${SRC_LIST}) 可执行文件  hello , 源文件读取变量 SRC_LIST 中的内容.
+	
+	工程名 和  可执行的文件名字 没有关系..
+	
+	语法的基本规则:
+      变量 使用  ${} 方式取值，但是在 if 控制语句中是直接使用变量名的.
+	  指令( 参数1 参数2 ....) 参数用 括号括起来，参数之间可以使用空格 也可以使用分号
+		指定是  大小写无关的，参数和变量是和 大小写有关的，但是 推荐指令  大写
+		
+		注意：
+		  SET(SRC_LIST main.cpp) 可以写出  SET(SRC_LIST "main.cpp"), 如果文件名字中含有空格，必须要加 双引号.
+		  
+		 SET(SRC_LIST main.cpp) 后缀 可以不写，会自动的找 c 和  cpp 最好不要这样写.
+		 内部构建和外部构建:
+		   上面的例子就说内部构建，会产生很多的临时文件，不方便清理.
+		   外部构建，会把产生的临时文件  放入到  build 目录的 下面，不会对源文件有任何的影响.
+		   
+		   
+		   
+	安装:
+		一种是  代码编译后，直接安装 make install 安装 
+		一种是 打包后的指定目录安装
+		     简单的可以这样指定 目录: make insatll DESTDIR=/tmp/test
+			 稍微复杂一点的  ./configure --prefix=/usr/
+			 
+	如何 安装 一个  hell,world 工程
+	    使用  cmake 的一个指令  INSTALL 
+		     INSTALL 的安装 可以包括: 二进制  动态库  静态库以及文件 目录  脚本等
+			 使用  cmake 的一个新的变量 :  CMAKE_INSTALL_PREFIX 
+			 
+		 
+		 
+	静态库 和动态库的构建
+	   1:
+	
+  hello: 库的名字
+  SHARED: 表示的是 生成的是一个  动态库 (  so 库 )
+  静态库:  STATIC 
+  ${LIBHELLO_SRC} : 源文件
+  3 ADD_LIBRARY( hello SHARED $(LIBHELLO_SRC))
+	库的名字 ：libhello.so
+
+同时 构建静态库和动态库
+    如果使用下面的这种方式，只是会构建一个动态库，不会构建出来静态库，
+	虽然 静态库的后缀是 .a 
+	 //  1.
+   ADD_LIBRARY( hello SHARED ${LIBHELLO_SRC})
+	ADD_LIBRARY( hello STATIC ${LIBHELLO_SRC})
+	 
+
+ //  2. 两个名字 不同的话 是可以构建的出来的..
+   ADD_LIBRARY( hello_shared SHARED ${LIBHELLO_SRC})
+	ADD_LIBRARY( hello_static STATIC ${LIBHELLO_SRC})
+
+
+
+	SET_TARGET_PROPERTIES :这条指令可以 用来设置 输出的名称, 对于 动态库, 还可以
+	用来指定动态库的版本和 API 版本...
+	同时 构建静态库和动态库：
+     
+	{
+	
+		SET( LIBHELLO_SRC hello.cpp)
+		ADD_LIBRARY( hello_static STATIC ${LIBHELLO_SRC})
+			
+		//  对 hello_static 的重 名为 hello 
+        SET_TARGET_PROPERTIES( hello_static PROPERTIES OUTPUT_NAME "hello" )
+   //  cmake 在构建一个 新的 target 的时候，会尝试 清理掉使用这个名字的库
+   // 因为在构建 libhello.so 时，会清理掉  libhello.a   
+		
+		SET_TARGET_PROPERTIES( hello_static PROPERTIES CLEAN_DIRECT_OUTPUT 1)
+	
+		ADD_LIBRARY(  hello SHARED ${LIBHELLO_SRC})
+		  SET_TARGET_PROPERTIES( hello PROPERTIES OUTPUT_NAME "hello" )
+		
+		  SET_TARGET_PROPERTIES( hello PROPERTIES CLEAN_DIRECT_OUTPUT 1 )
+		
+	}
+	
+	安装 共享库和 头文件
+	   将 hello的共享库安装到 <prefix>/lib 目录 
+	   将 hello.h 安装到 <prefix>/include/hello 目录
+	{
+		// 将文件 放到该目录下面...
+		INSTALL( FILES hello.h DESTINATION include/hello )
+	   // 二进制  动态库 静态库 安装都使用  TARGETS 
+	   INSTALL( TARGETS hello hello_static LIBARY DESTINATION lib ARCHIVE DESTINATION lib )
+	}
+		
+	注意:
+      安装的时候指定一下  路径,放到系统下:
+	     
+		 cmake -DCMAKE_INSTALL_PREFIX=/usr ....
+      	  
+	
+   CMAKE 中加入 头文件搜索路径:
+	INCLUDE_DIRECTORIES(/usr/include/hello) :// 加入搜索的 路径 
+
+
+   找到引用的函数问题:
+     报错信息:   undefined reference to 'HelloFunc()'
+	 1:关键字:  LINK_DIRECTORIES  添加非标准的共享库的 搜索路径
+	  指定第三方库所在的路径: LINK_DIRECTORIES( /home/my/libs)
+     
+	 还可以 有第二种  解决方法:
+	   关键字 : TARGET_LINK_LIBARIES 添加 需要链接的共享库
+	      TARGET_LINK_LIBARIES  的时候，只是需要 给出 动态库的名字就行
+     在 cmake 中插入 链接共享库，只是需要给出 动态链接库的名字 就可以了.
+	 有个前提，要在系统的环境变量下面 才可以这么使用...
+	   TARGET_LINK_LIBARIES( main libhello.so)
+	 
+
+	特殊的变量：
+	   CMAKE_INCLUDE_PATH
+	   CMAKE_LIBRARY_PATH
+	   这两个变量是环境变量 而不是  cmake 变量，可以在  linux 下的 bash 中进行设置
+	   
+	上面的 例子中使用了 绝对路径  INCLUDE_DIRECTORIES( /usr/include/hello) 来指明 include  
+路径的位置,我们还可以 使用另外一种方式,使用环境变量 ：
+    export CMAKE_INCLUDE_PATH=/usr/include/hello
+
+产生 debug 版本的方法: 
+  cmake -DCMAKE_BUILD_TYPE=debug 
+  

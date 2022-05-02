@@ -1,0 +1,24 @@
+
+
+//  测试 cmake 安装功能
+
+步骤: 
+    cmake 
+	make
+	make install 
+
+//  install 
+安装信息， 默认是  /usr/local/xxx  这个 xxx 是我们自己设置的..
+Install the project...
+-- Install configuration: ""
+-- Installing: /usr/local/share/doc/cmake/COPYRIGHT
+-- Installing: /usr/local/share/doc/cmake/README
+-- Installing: /usr/local/bin/runhello.sh
+-- Up-to-date: /usr/local/share/doc/cmake
+
+
+CMakeLists.txt  文件中这样写:
+  INSTALL( FILES COPYRIGHT README DESTINATION /home/book/tmp)
+这个是 绝对的路径，就会安装在  /home/book/tmp 下面 
+相对路径的话 是在   /usr/local/xxx  这个 xxx 是我们自己设置的..
+
